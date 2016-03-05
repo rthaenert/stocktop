@@ -1,0 +1,6 @@
+- Update Stocks periodically
+- Add Yahoo Finance API
+
+Questions
+- Where to get ISIN data from?
+- Where to get the correct stock symbol?
