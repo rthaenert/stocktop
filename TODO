@@ -1,6 +1,6 @@
-- Update Stocks periodically
-- Add Yahoo Finance API
-
-Questions
-- Where to get ISIN data from?
-- Where to get the correct stock symbol?
+TODO
+- Add indices (DAX, Eurostoxx, S&P 500, ...)
+- Add some tests
+- Add other sources for quotes (german quotes?)
+- Group default Stocks/Indices/Currencies in different windows
+- enhance README
