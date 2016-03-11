@@ -9,5 +9,6 @@ stocktop runs with Python 2.7.
 	pip install urwid
 
 Afterwards stocktop can be started with:
+
 	python stocktop.py
  
