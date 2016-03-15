@@ -10,19 +10,19 @@ symbols = ["^GDAXI", "^GSPC",  "AAPL", "TSLA", "T", "GOOGL", "TWTR", "GE", "MSFT
 data = {}
 quote_rows = []
 
-UPDATE_INTERVAL=5
+UPDATE_INTERVAL=10
 
 class QuoteRow(urwid.WidgetWrap):
 
 	def __init__(self, symbol, last_quote, last_quote_date_time, percent_change, exchange):
+		self.button = urwid.Button(symbol)
 		self.text_fields = {
-			"symbol": urwid.AttrMap(urwid.Text(symbol), 'quote_default'),
 			"last_quote" : urwid.AttrMap(urwid.Text(last_quote), 'quote_default'),
 			"last_quote_date_time":urwid.AttrMap(urwid.Text(last_quote_date_time), 'quote_default'),
 			"percent_change" : urwid.AttrMap(urwid.Text(percent_change), 'quote_default'),
 			"exchange":urwid.AttrMap(urwid.Text(exchange), 'quote_default')
 		}
-		self.urwid_columns = urwid.Columns([self.text_fields["symbol"],
+		self.urwid_columns = urwid.Columns([self.button,
 							self.text_fields["last_quote"],
 							self.text_fields["last_quote_date_time"],
 							self.text_fields["percent_change"],
@@ -43,7 +43,7 @@ class QuoteRow(urwid.WidgetWrap):
 		self.text_fields["percent_change"].original_widget.set_text(percent_change)
 	
 	def get_symbol(self):
-		return self.text_fields["symbol"].original_widget.get_text()[0]
+		return self.button.get_label()[0]
 
 def handle_input(input):
 	if input == "esc":
