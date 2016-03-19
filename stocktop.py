@@ -6,16 +6,21 @@ import decimal
 import quote_fetcher
 
 symbols = ["^GDAXI", "^GSPC",  "AAPL", "TSLA", "T", "GOOGL", "TWTR", "GE", "MSFT", "BAC"]
-
-data = {}
 quote_rows = []
+urwid_pile = None
+UPDATE_INTERVAL=5
 
-UPDATE_INTERVAL=10
+class QuoteSymbol(urwid.SelectableIcon):
+	
+	def keypress(self, size, key):
+		if key == '-':
+			remove_quote_from_ui(self.text)
+		return key
 
 class QuoteRow(urwid.WidgetWrap):
 
 	def __init__(self, symbol, last_quote, last_quote_date_time, percent_change, exchange):
-		self.button = urwid.Button(symbol)
+		self.button = QuoteSymbol(symbol, 0)
 		self.text_fields = {
 			"last_quote" : urwid.AttrMap(urwid.Text(last_quote), 'quote_default'),
 			"last_quote_date_time":urwid.AttrMap(urwid.Text(last_quote_date_time), 'quote_default'),
@@ -43,12 +48,17 @@ class QuoteRow(urwid.WidgetWrap):
 		self.text_fields["percent_change"].original_widget.set_text(percent_change)
 	
 	def get_symbol(self):
-		return self.button.get_label()[0]
-
+		return self.button.text
+	
 def handle_input(input):
 	if input == "esc":
 		sys.exit(0)
 	pass
+
+def remove_quote_from_ui(symbol):
+	for row in urwid_pile.contents:
+		if row[0].get_symbol() == symbol:
+			urwid_pile.contents.remove(row)
 
 def fetch_quotes(urwid_main_loop, user_data):
 	quotes = quote_fetcher.get_quotes(symbols)
@@ -66,7 +76,7 @@ def main():
 	parser = argparse.ArgumentParser(description="Show live quotes for Stocks/Indices/Currencies")
 	parser.add_argument('symbols', metavar='stock-symbol', type=str, nargs='*', help='ticker symbols')
 	args = parser.parse_args()
-	global symbols, quote_rows
+	global symbols, quote_rows, urwid_pile
 	if len(args.symbols) > 0:
 		symbols = args.symbols
 	quotes = quote_fetcher.get_quotes(symbols)
@@ -78,8 +88,8 @@ def main():
 	palette = [('quote_higher','dark green', 'black', 'standout'),
 		   ('quote_lower', 'dark red', 'black', 'standout'),
 		   ('quote_default', 'white', 'black', 'standout')]
-
-	loop = urwid.MainLoop(urwid.Filler(urwid.Pile(quote_rows), 'top'), palette, unhandled_input=handle_input)
+	urwid_pile = urwid.Pile(quote_rows)
+	loop = urwid.MainLoop(urwid.Filler(urwid_pile, 'top'), palette, unhandled_input=handle_input)
 	loop.set_alarm_in(UPDATE_INTERVAL, fetch_quotes)
 	loop.run()
 
