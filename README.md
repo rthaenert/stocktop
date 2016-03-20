@@ -1,6 +1,6 @@
 # stocktop
 stocktop is a text-based user interface for monitoring stocks/indices/currencies intraday.
-Currently stocktop uses the myql(https://github.com/josuebrunel/myql) to get stock quotes from Yahoo via YQL (see https://developer.yahoo.com/yql/).
+Currently stocktop uses myql (https://github.com/josuebrunel/myql) to get stock quotes from Yahoo via YQL (see https://developer.yahoo.com/yql/).
 
 ## Running stocktop
 stocktop runs with Python 2.7.
@@ -11,4 +11,9 @@ stocktop runs with Python 2.7.
 Afterwards stocktop can be started with:
 
 	python stocktop.py
+
+
+## Commands
+	+: Add a Ticker Symbol to the list
+	-: Remove the current Ticker Symbol
  

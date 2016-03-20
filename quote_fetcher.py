@@ -18,8 +18,10 @@ def parse_datetime(date_time_str):
 
 def _update_quote(quote, quotes_merged):
 	quotes_merged[quote["Symbol"]] = {"Exchange": quote["StockExchange"],
-					"LastPrice": quote["LastTradePriceOnly"].replace(',',''),
-					"LastTradeDateTime": quote["LastTradeDate"] + " " + quote["LastTradeTime"],
+					"LastPrice": quote["LastTradePriceOnly"].replace(',','') \
+							if quote["LastTradePriceOnly"] is not None else "",
+					"LastTradeDateTime": quote["LastTradeDate"] + " " + quote["LastTradeTime"] \
+							if quote["LastTradePriceOnly"] is not None else "",
 					"ChangeInPercent": quote["ChangeinPercent"] }
 
 def get_quotes(symbols):
@@ -56,4 +58,4 @@ def get_quotes(symbols):
 	return quotes_merged
 
 if __name__ == "__main__":
-	print get_quotes(["AAPL"])
+	print get_quotes(["TSLA"])
