@@ -23,6 +23,15 @@ def _update_quote(quote, quotes_merged):
 					"ChangeInPercent": quote["ChangeinPercent"] }
 
 def get_quotes(symbols):
+	""" Returns a dictionary of stock data for the given symbol(s).
+	Example:
+	{
+		"LastPrice": "9200.39",
+		"LastTradeDateTime": "",
+		"ChangeInPercent" : "",
+		"Exchange": "GER"
+	}
+	"""
 	if isinstance(symbols, str):
 		symbols = [ symbols ]
 	if not isinstance(symbols, list):
@@ -35,6 +44,7 @@ def get_quotes(symbols):
 	response = yql.select('yahoo.finance.quotes', 
 			['Symbol', 'LastTradeDate', 'LastTradeTime', 'LastTradePriceOnly', 'ChangeinPercent', 'StockExchange']).where(['symbol', 'IN', symbols])
 	if response.status_code != 200:
+		# TODO use a logger
 		print "error getting quotes from yahoo"
 		return quotes_merged
 	response = response.json()["query"]["results"]

@@ -10,45 +10,54 @@ quote_rows = []
 urwid_pile = None
 UPDATE_INTERVAL=5
 
-class QuoteSymbol(urwid.SelectableIcon):
+class AddTickerSymbolDialog(urwid.WidgetWrap):
+	def __init__(self):
+		close_button = urwid.Button("Close")
+
+class TickerSymbol(urwid.SelectableIcon):
 	
 	def keypress(self, size, key):
 		if key == '-':
 			remove_quote_from_ui(self.text)
+		elif key == '+':
+			AddQuoteDialog()
 		return key
 
 class QuoteRow(urwid.WidgetWrap):
 
 	def __init__(self, symbol, last_quote, last_quote_date_time, percent_change, exchange):
-		self.button = QuoteSymbol(symbol, 0)
+		self.symbol = TickerSymbol(symbol, 0)
 		self.text_fields = {
-			"last_quote" : urwid.AttrMap(urwid.Text(last_quote), 'quote_default'),
-			"last_quote_date_time":urwid.AttrMap(urwid.Text(last_quote_date_time), 'quote_default'),
-			"percent_change" : urwid.AttrMap(urwid.Text(percent_change), 'quote_default'),
-			"exchange":urwid.AttrMap(urwid.Text(exchange), 'quote_default')
+			"LastPrice" : urwid.AttrMap(urwid.Text(last_quote), 'quote_default'),
+			"LastTradeDateTime":urwid.AttrMap(urwid.Text(last_quote_date_time), 'quote_default'),
+			"ChangeInPercent" : urwid.AttrMap(urwid.Text(percent_change), 'quote_default'),
+			"Exchange":urwid.AttrMap(urwid.Text(exchange), 'quote_default')
 		}
-		self.urwid_columns = urwid.Columns([self.button,
-							self.text_fields["last_quote"],
-							self.text_fields["last_quote_date_time"],
-							self.text_fields["percent_change"],
-							self.text_fields["exchange"]])
+		self.urwid_columns = urwid.Columns([self.symbol,
+							self.text_fields["LastPrice"],
+							self.text_fields["LastTradeDateTime"],
+							self.text_fields["ChangeInPercent"],
+							self.text_fields["Exchange"]])
 		urwid.WidgetWrap.__init__(self, self.urwid_columns)
 
-	def update_quote(self, new_quote, last_quote_date_time, percent_change, exchange):
-		last = decimal.Decimal(self.text_fields["last_quote"].original_widget.get_text()[0])
-		new = decimal.Decimal(new_quote)
+	def update_quote(self, **kwargs):
+		last_price_field = self.text_fields["LastPrice"]
+		
+		last = decimal.Decimal(last_price_field.original_widget.get_text()[0])
+		new = decimal.Decimal(kwargs["LastPrice"])
 		if new == last:
-			self.text_fields["last_quote"].set_attr_map({None: 'quote_default'})
+			last_price_field.set_attr_map({None: 'quote_default'})
 		elif new > last:
-			self.text_fields["last_quote"].set_attr_map({None: 'quote_higher'})
+			last_price_field.set_attr_map({None: 'quote_higher'})
 		else:
-			self.text_fields["last_quote"].set_attr_map({None: 'quote_lower'})
-		self.text_fields["last_quote"].original_widget.set_text(new_quote)
-		self.text_fields["last_quote_date_time"].original_widget.set_text(last_quote_date_time)
-		self.text_fields["percent_change"].original_widget.set_text(percent_change)
+			last_price_field.set_attr_map({None: 'quote_lower'})
+
+		for key in kwargs:
+			if key in self.text_fields:
+				self.text_fields[key].original_widget.set_text(kwargs[key])
 	
 	def get_symbol(self):
-		return self.button.text
+		return self.symbol.text
 	
 def handle_input(input):
 	if input == "esc":
@@ -63,12 +72,10 @@ def remove_quote_from_ui(symbol):
 def fetch_quotes(urwid_main_loop, user_data):
 	quotes = quote_fetcher.get_quotes(symbols)
 	for quote_row in quote_rows:
-		for symbol, quote in quotes.iteritems():
-			if quote_row[1].get_symbol() == symbol:
-				quote_row[1].update_quote(quote["LastPrice"], 
-							quote["LastTradeDateTime"],
-							quote["ChangeInPercent"],
-							quote["Exchange"])
+		symbol = quote_row[1].get_symbol()
+		if symbol in quotes:
+			quote = quotes[symbol]
+			quote_row[1].update_quote(**quote)
 	urwid_main_loop.draw_screen()
 	urwid_main_loop.set_alarm_in(UPDATE_INTERVAL, fetch_quotes)
 
