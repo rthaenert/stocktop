@@ -12,7 +12,7 @@ urwid_pile = None
 UPDATE_INTERVAL=5
 
 
-logging.basicConfig(level=logging.DEBUG, filename='stocktop.log')
+logging.basicConfig(level=logging.DEBUG, filename='../stocktop.log')
 logger = logging.getLogger('stocktop')
 
 import quote_fetcher
@@ -27,11 +27,11 @@ class AddTickerSymbolDialog(urwid.WidgetWrap):
 		close_button = urwid.Button("Cancel")
 		urwid.connect_signal(close_button, 'click', lambda button:self._emit('close'))
 		urwid.connect_signal(ok_button, 'click', lambda button:self._emit('add', symbol_input.get_text()))
-		self.__super.__init__(urwid.ListBox([symbol_label, symbol_input, ok_button, close_button]))
+		self.__super.__init__(urwid.AttrWrap(urwid.ListBox([symbol_label, symbol_input, ok_button, close_button]), 'popbg'))
 
 class TickerSymbolPopUpLauncher(urwid.PopUpLauncher):
 	def __init__(self):
-		self.__super.__init__(urwid.Text("+: Add Symbol"))
+		self.__super.__init__(urwid.Text(""))
 		
 	def create_pop_up(self):
 		pop_up = AddTickerSymbolDialog()
@@ -142,14 +142,17 @@ def main():
 		quote_rows.append(('pack', QuoteRow(symbol, symbol_data["LastPrice"], 
 				symbol_data["LastTradeDateTime"], symbol_data["ChangeInPercent"], symbol_data["Exchange"])))
 
-	palette = [('quote_higher','dark green', 'black', 'standout'),
-		   ('quote_lower', 'dark red', 'black', 'standout'),
-		   ('quote_default', 'white', 'black', 'standout')]
+	palette = [('header', 'white,underline', 'black', 'standout, underline'),
+		   ('quote_higher','white', 'dark green', 'standout, bold'),
+		   ('quote_lower', 'white', 'dark red', 'standout, bold'),
+		   ('quote_default', 'white', 'black', 'standout'),
+		   ('popbg', 'white', 'dark blue')]
 	urwid_pile = urwid.Pile(quote_rows)
 	popup_launcher = TickerSymbolPopUpLauncher()	
-	loop = urwid.MainLoop(urwid.Frame(header=urwid.Text("Stocktop"), 
+	footer_text = urwid.Text("+: Add Symbol -: Remove Symbol Esc: Quit")
+	loop = urwid.MainLoop(urwid.Frame(header=urwid.AttrWrap(urwid.Text("Stocktop"), 'header'),
 					body=(urwid.Filler(urwid_pile, 'top')), 
-					footer=popup_launcher),
+					footer=urwid.Columns([popup_launcher, footer_text])),
 					palette, unhandled_input=handle_input, pop_ups=True)
 	loop.set_alarm_in(UPDATE_INTERVAL, fetch_quotes)
 	loop.run()
