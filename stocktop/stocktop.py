@@ -1,16 +1,18 @@
 import urwid
+import os
 import sys
 import argparse
 import json
 import decimal
 import logging
+import threading
 
-symbols = ["^GDAXI", "^GSPC",  "AAPL", "TSLA", "T", "GOOGL", "TWTR", "GE", "MSFT", "BAC"]
+symbols = ["^GDAXI", "^GSPC",  "AAPL", "TSLA", "T", "GOOGL", "TWTR", "GE", "MSFT", "BAC", "DB1.DE", "DB", "CBK.DE", "GS"]
 
-quote_rows = []
 urwid_pile = None
+scheduled_timer = None
 UPDATE_INTERVAL=5
-
+loop = None
 
 logging.basicConfig(level=logging.DEBUG, filename='../stocktop.log')
 logger = logging.getLogger('stocktop')
@@ -80,13 +82,14 @@ class QuoteRow(urwid.WidgetWrap):
 		last_price = last_price_field.original_widget.get_text()[0]	
 		last = decimal.Decimal(last_price) if last_price is not '' else decimal.Decimal(0)
 		new = decimal.Decimal(kwargs["LastPrice"])
+		logger.debug(self.symbol.text)
 		if new == last:
 			last_price_field.set_attr_map({None: 'quote_default'})
 		elif new > last:
 			last_price_field.set_attr_map({None: 'quote_higher'})
 		else:
 			last_price_field.set_attr_map({None: 'quote_lower'})
-
+	
 		for key in kwargs:
 			if key in self.text_fields:
 				self.text_fields[key].original_widget.set_text(kwargs[key])
@@ -96,6 +99,9 @@ class QuoteRow(urwid.WidgetWrap):
 	
 def handle_input(input):
 	if input == "esc":
+		# TODO
+		if scheduled_timer is not None:
+			scheduled_timer.cancel()
 		sys.exit(0)
 	pass
 
@@ -110,29 +116,33 @@ def add_symbol_to_ui(button, symbol):
 		if row[0].get_symbol() == symbol:
 			logger.debug("Symbol {} already in List. skipping.".format(symbol))
 			return
-	
 	logger.debug("Contents: {}".format(urwid_pile.contents))
 	quote_row = QuoteRow(symbol, "","","","")
-	# FIXME should be enough to only store the Pile globally
-	quote_rows.append(('pack', quote_row))
 	urwid_pile.contents.append((quote_row, ('pack', None)))
 	symbols.append(symbol)
 
-def fetch_quotes(urwid_main_loop, user_data):
+def fetch_quotes():
 	quotes = quote_fetcher.get_quotes(symbols)
-	for quote_row in quote_rows:
-		symbol = quote_row[1].get_symbol()
+	update_quotes_ui(quotes)
+	scheduled_timer = threading.Timer(UPDATE_INTERVAL, fetch_quotes)
+	scheduled_timer.start()
+	loop.draw_screen()
+
+def update_quotes_ui(quotes):
+	for row in urwid_pile.contents:
+		quote_row = row[0]
+		symbol = quote_row.get_symbol()
 		if symbol in quotes:
 			quote = quotes[symbol]
-			quote_row[1].update_quote(**quote)
-	urwid_main_loop.draw_screen()
-	urwid_main_loop.set_alarm_in(UPDATE_INTERVAL, fetch_quotes)
+			quote_row.update_quote(**quote)
+	
+
 
 def main():
 	parser = argparse.ArgumentParser(description="Show live quotes for Stocks/Indices/Currencies")
 	parser.add_argument('symbols', metavar='stock-symbol', type=str, nargs='*', help='ticker symbols')
 	args = parser.parse_args()
-	global symbols, quote_rows, urwid_pile, popup_launcher
+	global symbols, urwid_pile, popup_launcher, scheduled_timer, loop
 	if len(args.symbols) > 0:
 		symbols = args.symbols
 
@@ -154,7 +164,9 @@ def main():
 					body=(urwid.Filler(urwid_pile, 'top')), 
 					footer=urwid.Columns([popup_launcher, footer_text])),
 					palette, unhandled_input=handle_input, pop_ups=True)
-	loop.set_alarm_in(UPDATE_INTERVAL, fetch_quotes)
+	scheduled_timer = threading.Timer(UPDATE_INTERVAL, fetch_quotes)
+	scheduled_timer.start()
+	loop.watch_pipe(update_quotes_ui)
 	loop.run()
 
 if __name__ == '__main__':
