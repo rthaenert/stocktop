@@ -13,7 +13,7 @@ Afterwards stocktop can be started with:
 	python stocktop.py
 
 ## Screenshot
-[[https://github.com/rthaenert/stocktop/blob/master/doc/screenshot.png|alt=screenshot]
+![Screenshot](/doc/screenshot.png?raw=true "Stocktop")
 
 ## Commands
 	+: Add a Ticker Symbol to the list
